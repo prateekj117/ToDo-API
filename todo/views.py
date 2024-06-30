@@ -68,3 +68,35 @@ class TaskRegistrationView(GenericAPIView):
                 status=status.HTTP_201_CREATED
             )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @swagger_auto_schema(responses={
+        status.HTTP_200_OK: openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'data': openapi.Schema(
+                    type=openapi.TYPE_ARRAY,
+                    items=openapi.Schema(
+                        type=openapi.TYPE_OBJECT,
+                        properties={
+                            'title': openapi.Schema(type=openapi.TYPE_STRING),
+                            'description': openapi.Schema(type=openapi.TYPE_STRING),
+                            'status': openapi.Schema(type=openapi.TYPE_STRING),
+                            'user': openapi.Schema(type=openapi.TYPE_STRING)
+                        }
+                    ),
+                ),
+            }
+        ),
+    })
+    def get(self, request):
+        """
+        Method to run on task get request
+        """
+        tasks = Task.objects.filter(user = request.user)
+        serializer = TaskSerializer(tasks, many = True)
+        return Response(
+                {
+                    'data': serializer.data,
+                },
+                status=status.HTTP_200_OK
+            )
