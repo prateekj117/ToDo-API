@@ -410,3 +410,30 @@ class TaskDetailTests(APITestCase):
         self.assertEqual(response.data, {
             'data' : 'Task deleted successfully',
         })
+
+    def test_update_task_detail(self):
+        """
+        Ensure we can update a task.
+        """
+        access_token_1 = self.create_user_1()
+        headers1 = {
+           'Authorization': 'Bearer ' + access_token_1['token']['access']
+        }
+        task_data = {
+            'title': 'Clean Room',
+            'description': 'Need to clean my room and change bed sheets',
+            'status': Task.TaskStatus.COMPLETED
+        }
+        self.assertEqual(Task.objects.count(), 0)
+        self.client.post(task_creation_url, task_data, format='json', headers = headers1)
+        self.assertEqual(Task.objects.count(), 1)
+        task_data_update = {
+            'title': 'Clean Room',
+            'description': 'Need to clean my room and change bed sheets',
+            'status': Task.TaskStatus.PENDING
+        }
+        response = self.client.put('/tasks/1', task_data_update, format='json', headers = headers1)
+        assert response.status_code == 200
+        self.assertEqual(response.data, {
+            'data' : 'Task updated successfully',
+        })
