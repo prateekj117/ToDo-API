@@ -149,3 +149,32 @@ class TaskDetailView(GenericAPIView):
                 },
                 status=status.HTTP_200_OK
             )
+
+    @swagger_auto_schema(responses={
+        status.HTTP_200_OK: openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'data': openapi.Schema(type=openapi.TYPE_STRING),
+            }
+        ),
+        status.HTTP_400_BAD_REQUEST: openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'errors': openapi.Schema(type=openapi.TYPE_STRING)
+            }
+        ),
+    })
+    def delete(self, request, pk):
+        """
+        Method to run on task deletion request
+        """
+         # Ideally, we should return a 403 here if task belongs to other user.
+        task = self.get_task(pk = pk, user = request.user)
+        task.delete()
+
+        return Response(
+                {
+                    'data': 'Task deleted successfully',
+                },
+                status=status.HTTP_200_OK
+            )

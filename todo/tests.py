@@ -350,3 +350,63 @@ class TaskDetailTests(APITestCase):
                 'user': 1,
             },
         })
+
+    def test_cannot_delete_task_detail(self):
+        """
+        Ensure we cannot delete a task by other user.
+        """
+        access_token_1 = self.create_user_1()
+        access_token_2 = self.create_user_2()
+        headers1 = {
+           'Authorization': 'Bearer ' + access_token_1['token']['access']
+        }
+        headers2 = {
+           'Authorization': 'Bearer ' + access_token_2['token']['access']
+        }
+        task_data = {
+            'title': 'Clean Room',
+            'description': 'Need to clean my room and change bed sheets',
+            'status': Task.TaskStatus.COMPLETED
+        }
+        self.assertEqual(Task.objects.count(), 0)
+        self.client.post(task_creation_url, task_data, format='json', headers = headers1)
+        self.client.post(task_creation_url, task_data, format='json', headers = headers1)
+        self.client.post(task_creation_url, task_data, format='json', headers = headers2)
+        self.assertEqual(Task.objects.count(), 3)
+        response = self.client.delete('/tasks/3', format='json', headers = headers1)
+        # Ideally, we should return a 403 here.
+        assert response.status_code == 404
+        self.assertEqual(response.data, {
+            'detail' : exceptions.ErrorDetail(
+                string='No Task matches the given query.',
+                code='not_found'
+            )
+        })
+
+    def test_delete_task_detail(self):
+        """
+        Ensure we can delete a task.
+        """
+        access_token_1 = self.create_user_1()
+        access_token_2 = self.create_user_2()
+        headers1 = {
+           'Authorization': 'Bearer ' + access_token_1['token']['access']
+        }
+        headers2 = {
+           'Authorization': 'Bearer ' + access_token_2['token']['access']
+        }
+        task_data = {
+            'title': 'Clean Room',
+            'description': 'Need to clean my room and change bed sheets',
+            'status': Task.TaskStatus.COMPLETED
+        }
+        self.assertEqual(Task.objects.count(), 0)
+        self.client.post(task_creation_url, task_data, format='json', headers = headers1)
+        self.client.post(task_creation_url, task_data, format='json', headers = headers1)
+        self.client.post(task_creation_url, task_data, format='json', headers = headers2)
+        self.assertEqual(Task.objects.count(), 3)
+        response = self.client.delete('/tasks/2', format='json', headers = headers1)
+        assert response.status_code == 200
+        self.assertEqual(response.data, {
+            'data' : 'Task deleted successfully',
+        })
