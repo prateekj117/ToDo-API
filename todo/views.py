@@ -1,3 +1,4 @@
+from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
@@ -94,6 +95,54 @@ class TaskRegistrationView(GenericAPIView):
         """
         tasks = Task.objects.filter(user = request.user)
         serializer = TaskSerializer(tasks, many = True)
+        return Response(
+                {
+                    'data': serializer.data,
+                },
+                status=status.HTTP_200_OK
+            )
+
+class TaskDetailView(GenericAPIView):
+    """
+    View for task details
+    """
+    renderer_classes = [TaskRenderer]
+    serializer_class = TaskSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_task(self, pk, user):
+        obj = get_object_or_404(Task, pk=pk, user=user)
+        return obj
+
+    @swagger_auto_schema(responses={
+        status.HTTP_200_OK: openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'data': openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'title': openapi.Schema(type=openapi.TYPE_STRING),
+                        'description': openapi.Schema(type=openapi.TYPE_STRING),
+                        'status': openapi.Schema(type=openapi.TYPE_STRING),
+                        'user': openapi.Schema(type=openapi.TYPE_STRING)
+                    },
+                ),
+            }
+        ),
+        status.HTTP_400_BAD_REQUEST: openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'errors': openapi.Schema(type=openapi.TYPE_STRING)
+            }
+        ),
+    })
+    def get(self, request, pk):
+        """
+        Method to run on task detail get request
+        """
+        task = self.get_task(pk = pk, user = request.user)
+
+        serializer = TaskSerializer(task, many = False)
         return Response(
                 {
                     'data': serializer.data,

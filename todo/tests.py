@@ -251,3 +251,102 @@ class TaskGetTests(APITestCase):
                 },
             ],
         })
+
+class TaskDetailTests(APITestCase):
+    """
+    Contains tests for getting task details
+    """
+    def create_user_1(self):
+        """
+        Common function for creating user
+        """
+        self.assertEqual(User.objects.count(), 0)
+        register_user = {
+            'name': 'Test',
+            'email': 'test@gmail.com',
+            'password': 'password',
+            'password_check': 'password',
+        }
+        response = self.client.post(register_url, register_user, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(User.objects.count(), 1)
+        return response.data
+
+    def create_user_2(self):
+        """
+        Common function for creating user
+        """
+        register_user = {
+            'name': 'Test',
+            'email': 'test1@gmail.com',
+            'password': 'password',
+            'password_check': 'password',
+        }
+        response = self.client.post(register_url, register_user, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        return response.data
+
+    def test_get_task_detail_404(self):
+        """
+        Ensure we cannot get a task detail for another user.
+        """
+        access_token_1 = self.create_user_1()
+        access_token_2 = self.create_user_2()
+        headers1 = {
+           'Authorization': 'Bearer ' + access_token_1['token']['access']
+        }
+        headers2 = {
+           'Authorization': 'Bearer ' + access_token_2['token']['access']
+        }
+        task_data = {
+            'title': 'Clean Room',
+            'description': 'Need to clean my room and change bed sheets',
+            'status': Task.TaskStatus.COMPLETED
+        }
+        self.assertEqual(Task.objects.count(), 0)
+        self.client.post(task_creation_url, task_data, format='json', headers = headers1)
+        self.client.post(task_creation_url, task_data, format='json', headers = headers1)
+        self.client.post(task_creation_url, task_data, format='json', headers = headers2)
+        self.assertEqual(Task.objects.count(), 3)
+        response = self.client.get('/tasks/3', format='json', headers = headers1)
+        assert response.status_code == 404
+        self.assertEqual(response.data, {
+            'detail' : exceptions.ErrorDetail(
+                string='No Task matches the given query.',
+                code='not_found'
+            )
+        })
+
+    def test_get_task_detail(self):
+        """
+        Ensure we can get a task detail.
+        """
+        access_token_1 = self.create_user_1()
+        access_token_2 = self.create_user_2()
+        headers1 = {
+           'Authorization': 'Bearer ' + access_token_1['token']['access']
+        }
+        headers2 = {
+           'Authorization': 'Bearer ' + access_token_2['token']['access']
+        }
+        task_data = {
+            'title': 'Clean Room',
+            'description': 'Need to clean my room and change bed sheets',
+            'status': Task.TaskStatus.COMPLETED
+        }
+        self.assertEqual(Task.objects.count(), 0)
+        self.client.post(task_creation_url, task_data, format='json', headers = headers1)
+        self.client.post(task_creation_url, task_data, format='json', headers = headers1)
+        self.client.post(task_creation_url, task_data, format='json', headers = headers2)
+        self.assertEqual(Task.objects.count(), 3)
+        response = self.client.get('/tasks/2', format='json', headers = headers1)
+        assert response.status_code == 200
+        self.assertEqual(response.data, {
+            'data' : {
+                'id': 2,
+                'title': 'Clean Room',
+                'description': 'Need to clean my room and change bed sheets',
+                'status' : Task.TaskStatus.COMPLETED,
+                'user': 1,
+            },
+        })

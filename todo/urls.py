@@ -22,4 +22,5 @@ urlpatterns = [
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
     path("users/", include("authentication.urls")),
     path('tasks', views.TaskRegistrationView.as_view(), name='tasks'),
+    path('tasks/<str:pk>', views.TaskDetailView.as_view(), name="tasks-Detail"),
 ]
