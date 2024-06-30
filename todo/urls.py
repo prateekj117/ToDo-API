@@ -3,6 +3,8 @@ from rest_framework import permissions
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 
+from todo import views
+
 schema_view = get_schema_view(
    openapi.Info(
       title="TODO API Docs",
@@ -18,5 +20,6 @@ schema_view = get_schema_view(
 
 urlpatterns = [
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
-    path("users/", include("authentication.urls"))
+    path("users/", include("authentication.urls")),
+    path('tasks', views.TaskRegistrationView.as_view(), name='tasks'),
 ]
